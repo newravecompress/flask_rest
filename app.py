@@ -1,122 +1,47 @@
-#!flask/bin/python
 from flask import Flask
 from flask import jsonify
 from flask import abort
 from flask import make_response
 from flask import request
 from flask import url_for
-# from flask.ext.httpauth import HTTPBasicAuth
-# auth = HTTPBasicAuth()
-
+import time
 
 app = Flask(__name__)
 
-
+orders = []
 
 
 @app.route('/')
 def index():
-    return "Hello, World!"
+    return "Hello, todoAPI!"
 
 
-tasks = [
-    {
-        'id': 1,
-        'title': 'Buy groceries',
-        'description': 'Milk, Cheese, Pizza, Fruit, Tylenol', 
-        'done': False
-    },
-    {
-        'id': 2,
-        'title': 'Learn Python',
-        'description': 'Need to find a good Python tutorial on the web', 
-        'done': False
+@app.route('/statistics', methods=['GET'])
+def get_orders():
+    for order in orders:
+        if order['timestamp'] <= time.time() - 60:
+            orders.remove(order)
+    # orders = [o for o in orders if o['timestamp'] > time.time() - 60]
+    # orders = list(filter(lambda o: o['timestamp'] > time.time(), orders))
+    count = len(orders)
+    total = sum(o['sum'] for o in orders if o['timestamp'] > time.time() - 60)
+    return jsonify({'total': total, 'avg': total/count})
+
+
+@app.route('/sales', methods=['POST'])
+def add_order():
+    if not request or 'sum' not in request.form:
+        abort(400)
+    order = {
+        'sum': int(request.form['sum']),
+        'timestamp': time.time()
     }
-]
-
-
-# @auth.get_password
-# def get_password(username):
-#     if username == 'miguel':
-#         return 'python'
-#     return None
-
-# @auth.error_handler
-# def unauthorized():
-#     return make_response(jsonify({'error': 'Unauthorized access'}), 401)
-
-# @auth.error_handler
-# def unauthorized():
-#     return make_response(jsonify({'error': 'Unauthorized access'}), 403)
-
-
-def make_public_task(task):
-    new_task = {}
-    for field in task:
-        if field == 'id':
-            new_task['uri'] = url_for('get_task', task_id=task['id'], _external=True)
-        else:
-            new_task[field] = task[field]
-    return new_task
-
-
-@app.route('/api/tasks', methods=['GET'])
-# @auth.login_required
-def get_tasks():
-    return jsonify({'tasks': list(map(make_public_task, tasks))})
-
-
-@app.route('/api/tasks/<int:task_id>', methods=['GET']) 
-def get_task(task_id):
-    task = list(filter(lambda t: t['id'] == task_id, tasks))
-
-    if len(task) == 0:
-        return make_response(jsonify({'error': 'Not found'}), 404)
-    return jsonify({'task': task[0]})
-
-
-@app.route('/api/tasks', methods=['POST'])
-def create_task():
-    if not request.json or not 'title' in request.json:
-        abort(400)
-    task = {
-        'id': tasks[-1]['id'] + 1,
-        'title': request.json['title'],
-        'description': request.json.get('description', ""),
-        'done': False
-    }
-    tasks.append(task)
-    return jsonify({'task': task}), 201
-
-
-@app.route('/api/tasks/<int:task_id>', methods=['PUT'])
-def update_task(task_id):
-    task = list(filter(lambda t: t['id'] == task_id, tasks))
-    if len(task) == 0:
-        abort(404)
-    if not request.json:
-        abort(400)
-    if 'title' in request.json and type(request.json['title']) != unicode:
-        abort(400)
-    if 'description' in request.json and type(request.json['description']) is not unicode:
-        abort(400)
-    if 'done' in request.json and type(request.json['done']) is not bool:
-        abort(400)
-    task[0]['title'] = request.json.get('title', task[0]['title'])
-    task[0]['description'] = request.json.get('description', task[0]['description'])
-    task[0]['done'] = request.json.get('done', task[0]['done'])
-    return jsonify({'task': task[0]})
-
-
-@app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
-def delete_task(task_id):
-    task = filter(lambda t: t['id'] == task_id, tasks)
-    if len(task) == 0:
-        abort(404)
-    tasks.remove(task[0])
-    return jsonify({'result': True})
+    orders.append(order)
+    return jsonify({'order': order}), 202
 
 
 if __name__ == '__main__':
     app.run(debug=True)
 
+# curl -i http://localhost:5000/statistics
+# curl -i -H "Content-Type: application/json" -X POST -d '{"sum":111111}' http://localhost:5000/sales

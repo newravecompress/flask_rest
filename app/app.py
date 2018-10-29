@@ -1,6 +1,5 @@
 from flask import Flask
 from flask import jsonify
-from flask import abort
 from flask import request
 import time
 from flask_httpauth import HTTPBasicAuth
@@ -60,12 +59,12 @@ def get_orders():
 @auth.login_required
 def add_order():
     if not request or 'sales_amount' not in request.form:
-        abort(400)
+        return '', 400
 
     try:
         amount = round(float(request.form['sales_amount']), 2)
     except ValueError:
-        abort(400)
+        return '', 400
 
     order = {
         'sales_amount': amount,

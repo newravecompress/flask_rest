@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>todoAPI</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<div id="total"></div>
+<div id="avg"></div>
+
+<script>
+    function getAjaxData() {
+        var period = 10;
+
+        $.ajax({
+            type: "GET",
+            url: "/statistics",
+            dataType: 'json',
+            username: 'test',
+            password: 'gfhjkm',
+            success: function (data) {
+                console.log(data);
+                var now = new Date();
+                Plotly.extendTraces('total', {y: [[data.total_sales_amount]], x: [[now]]}, [0]);
+                Plotly.extendTraces('avg', {y: [[data.average_amount_per_order]], x: [[now]]}, [0]);
+                cnt++;
+
+                if (cnt > period) {
+                    Plotly.relayout('total', {
+                        xaxis: {
+                            range: [now - period*1000, now]
+                        }
+                    });
+                    Plotly.relayout('avg', {
+                        xaxis: {
+                            range: [now - period*1000, now]
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    var now = new Date();
+
+    var total = {
+        plot: {
+            y: [0],
+            x: [now],
+            mode: 'lines',
+            name: 'Total'
+        },
+        layout: {
+            title: 'Total sales amount',
+            xaxis: {
+                title: 'Time'
+            },
+            yaxis: {
+                title: 'Total amount'
+            }
+        }
+    };
+
+    var avg = {
+        plot: {
+            y: [0],
+            x: [now],
+            mode: 'lines',
+            name: 'Average'
+        },
+        layout: {
+            title: 'Average amount per order',
+            xaxis: {
+                title: 'Time'
+            },
+            yaxis: {
+                title: 'Average amount'
+            }
+        }
+    };
+
+    Plotly.newPlot('total', [total.plot], total.layout);
+    Plotly.newPlot('avg', [avg.plot], avg.layout);
+    var cnt = 0;
+    setInterval(function () {
+        getAjaxData();
+    }, 1000);
+</script>
+</body>
+</html>

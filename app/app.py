@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import jsonify
 from flask import request
+from flask import render_template
 import time
 from flask_httpauth import HTTPBasicAuth
 
@@ -29,7 +30,7 @@ orders = []
 
 @app.route('/')
 def index():
-    return "Hello, todoAPI!"
+    return render_template('index.html')
 
 
 @app.route('/statistics', methods=['GET'])

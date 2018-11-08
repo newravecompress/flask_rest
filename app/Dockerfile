@@ -11,3 +11,4 @@ EXPOSE 5000
 
 # run the application
 CMD ["python", "./app.py"]
+CMD ["python", "./test.py"]

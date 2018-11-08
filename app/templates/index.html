@@ -12,7 +12,7 @@
 
 <script>
     function getAjaxData() {
-        var period = 10;
+        var period = 60; // период отображения графиков в секундах
 
         $.ajax({
             type: "GET",
@@ -21,21 +21,21 @@
             username: 'test',
             password: 'gfhjkm',
             success: function (data) {
-                console.log(data);
                 var now = new Date();
                 Plotly.extendTraces('total', {y: [[data.total_sales_amount]], x: [[now]]}, [0]);
                 Plotly.extendTraces('avg', {y: [[data.average_amount_per_order]], x: [[now]]}, [0]);
                 cnt++;
 
                 if (cnt > period) {
+                    cnt--;
                     Plotly.relayout('total', {
                         xaxis: {
-                            range: [now - period*1000, now]
+                            range: [now - period * 1000, now]
                         }
                     });
                     Plotly.relayout('avg', {
                         xaxis: {
-                            range: [now - period*1000, now]
+                            range: [now - period * 1000, now]
                         }
                     });
                 }
@@ -44,10 +44,25 @@
     }
 
     var now = new Date();
+    var initTotal = 0;
+    var initAvg = 0;
+
+    $.ajax({
+        type: "GET",
+        url: "/statistics",
+        dataType: 'json',
+        username: 'test',
+        password: 'gfhjkm',
+        async: false,
+        success: function (data) {
+            initTotal = data.total_sales_amount;
+            initAvg = data.average_amount_per_order;
+        }
+    });
 
     var total = {
         plot: {
-            y: [0],
+            y: [initTotal],
             x: [now],
             mode: 'lines',
             name: 'Total'
@@ -65,7 +80,7 @@
 
     var avg = {
         plot: {
-            y: [0],
+            y: [initAvg],
             x: [now],
             mode: 'lines',
             name: 'Average'
@@ -83,9 +98,12 @@
 
     Plotly.newPlot('total', [total.plot], total.layout);
     Plotly.newPlot('avg', [avg.plot], avg.layout);
+
     var cnt = 0;
-    setInterval(function () {
+
+    setTimeout(function getStatistics() {
         getAjaxData();
+        setTimeout(getStatistics, 1000);
     }, 1000);
 </script>
 </body>
